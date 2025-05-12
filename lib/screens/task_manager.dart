@@ -79,12 +79,34 @@ class _TaskManagerState extends State<TaskManager> {
   }
 
   List<Task> _getFilteredTasks() {
+    List<Task> filteredTasks = _tasks;
+
+    // Lọc theo trạng thái
     if (_filter == 'Completed') {
-      return _tasks.where((task) => task.isCompleted).toList();
+      filteredTasks = _tasks.where((task) => task.isCompleted).toList();
     } else if (_filter == 'Incomplete') {
-      return _tasks.where((task) => !task.isCompleted).toList();
+      filteredTasks = _tasks.where((task) => !task.isCompleted).toList();
     }
-    return _tasks; // 'All'
+
+    // Sắp xếp theo deadline
+    filteredTasks.sort((a, b) => a.deadline.compareTo(b.deadline));
+
+    return filteredTasks;
+  }
+
+  Color _getTaskColor(Task task) {
+    final now = DateTime.now();
+    final difference = task.deadline.difference(now).inHours;
+
+    if (task.isCompleted) {
+      return Colors.green; // Công việc đã hoàn thành
+    } else if (difference <= 24) {
+      return Colors.red; // Công việc sắp hết hạn (trong vòng 24 giờ)
+    } else if (difference <= 72) {
+      return Colors.orange; // Công việc sắp đến hạn (trong vòng 3 ngày)
+    } else {
+      return Colors.blue; // Công việc còn nhiều thời gian
+    }
   }
 
   @override
@@ -116,44 +138,52 @@ class _TaskManagerState extends State<TaskManager> {
         itemCount: filteredTasks.length,
         itemBuilder: (context, index) {
           final task = filteredTasks[index];
-          return ListTile(
-            title: Text(
-              task.title,
-              style: TextStyle(
-                decoration: task.isCompleted
-                    ? TextDecoration.lineThrough
-                    : TextDecoration.none,
+          return Container(
+            color: _getTaskColor(task).withOpacity(0.1), // Màu nền nhạt
+            child: ListTile(
+              title: Text(
+                task.title,
+                style: TextStyle(
+                  decoration: task.isCompleted
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none,
+                ),
               ),
-            ),
-            subtitle: Text(task.description),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    task.isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
+              subtitle: Text(
+                'Deadline: ${task.deadline}',
+                style: TextStyle(
+                  color: _getTaskColor(task), // Màu chữ theo trạng thái
+                ),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      task.isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
+                    ),
+                    onPressed: () => _toggleTaskCompletion(index),
                   ),
-                  onPressed: () => _toggleTaskCompletion(index),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AddTaskDialog(
-                          task: task,
-                          onAddTask: (updatedTask) => _editTask(index, updatedTask),
-                        );
-                      },
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteTask(index),
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AddTaskDialog(
+                            task: task,
+                            onAddTask: (updatedTask) => _editTask(index, updatedTask),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => _deleteTask(index),
+                  ),
+                ],
+              ),
             ),
           );
         },
