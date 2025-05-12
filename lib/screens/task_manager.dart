@@ -98,6 +98,11 @@ class _TaskManagerState extends State<TaskManager> {
     return _tasks.where((task) => task.isCompleted).length;
   }
 
+  bool _isTaskDisabled(Task task) {
+    final now = DateTime.now();
+    return task.isCompleted || task.deadline.isBefore(now);
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredTasks = _getFilteredTasks();
@@ -151,51 +156,64 @@ class _TaskManagerState extends State<TaskManager> {
               itemCount: filteredTasks.length,
               itemBuilder: (context, index) {
                 final task = filteredTasks[index];
+                final isDisabled = _isTaskDisabled(task);
+
                 return Container(
                   color: _getTaskColor(task).withOpacity(0.1), // Màu nền nhạt
-                  child: ListTile(
-                    title: Text(
-                      task.title,
-                      style: TextStyle(
-                        decoration: task.isCompleted
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
+                  child: Opacity(
+                    opacity: isDisabled ? 0.6 : 1.0, // Giảm độ trong suốt nếu bị vô hiệu hóa
+                    child: ListTile(
+                      title: Text(
+                        task.title,
+                        style: TextStyle(
+                          decoration: isDisabled
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
                       ),
-                    ),
-                    subtitle: Text(
-                      'Deadline: ${task.deadline}',
-                      style: TextStyle(
-                        color: _getTaskColor(task), // Màu chữ theo trạng thái
+                      subtitle: Text(
+                        'Deadline: ${task.deadline}',
+                        style: TextStyle(
+                          color: _getTaskColor(task), // Màu chữ theo trạng thái
+                          decoration: isDisabled
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
                       ),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            task.isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              task.isCompleted
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                            ),
+                            onPressed: isDisabled ? null : () => _toggleTaskCompletion(index),
                           ),
-                          onPressed: () => _toggleTaskCompletion(index),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AddTaskDialog(
-                                  task: task,
-                                  onAddTask: (updatedTask) => _editTask(index, updatedTask),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => _deleteTask(index),
-                        ),
-                      ],
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: isDisabled
+                                ? null
+                                : () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return AddTaskDialog(
+                                          task: task,
+                                          onAddTask: (updatedTask) =>
+                                              _editTask(index, updatedTask),
+                                        );
+                                      },
+                                    );
+                                  },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: isDisabled ? null : () => _deleteTask(index),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
