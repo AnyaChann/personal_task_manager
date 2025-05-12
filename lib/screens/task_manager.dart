@@ -88,8 +88,21 @@ class _TaskManagerState extends State<TaskManager> {
       filteredTasks = _tasks.where((task) => !task.isCompleted).toList();
     }
 
-    // Sắp xếp theo deadline
-    filteredTasks.sort((a, b) => a.deadline.compareTo(b.deadline));
+    // Sắp xếp theo trạng thái và deadline
+    filteredTasks.sort((a, b) {
+      final now = DateTime.now();
+
+      // Công việc chưa hoàn thành và chưa hết hạn được ưu tiên
+      if (!a.isCompleted && a.deadline.isAfter(now) && (b.isCompleted || b.deadline.isBefore(now))) {
+        return -1;
+      }
+      if ((!b.isCompleted && b.deadline.isAfter(now)) && (a.isCompleted || a.deadline.isBefore(now))) {
+        return 1;
+      }
+
+      // Nếu cả hai cùng trạng thái, sắp xếp theo deadline
+      return a.deadline.compareTo(b.deadline);
+    });
 
     return filteredTasks;
   }
