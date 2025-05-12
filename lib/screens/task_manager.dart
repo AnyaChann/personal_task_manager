@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
 import '../widgets/add_task_dialog.dart';
 
@@ -12,28 +14,58 @@ class TaskManager extends StatefulWidget {
 class _TaskManagerState extends State<TaskManager> {
   final List<Task> _tasks = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  // Load tasks from local storage
+  Future<void> _loadTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? tasksJson = prefs.getString('tasks');
+    if (tasksJson != null) {
+      final List<dynamic> tasksList = jsonDecode(tasksJson);
+      setState(() {
+        _tasks.clear();
+        _tasks.addAll(tasksList.map((task) => Task.fromJson(task)));
+      });
+    }
+  }
+
+  // Save tasks to local storage
+  Future<void> _saveTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String tasksJson = jsonEncode(_tasks.map((task) => task.toJson()).toList());
+    await prefs.setString('tasks', tasksJson);
+  }
+
   void _addTask(Task task) {
     setState(() {
       _tasks.add(task);
     });
+    _saveTasks();
   }
 
   void _editTask(int index, Task updatedTask) {
     setState(() {
       _tasks[index] = updatedTask;
     });
+    _saveTasks();
   }
 
   void _deleteTask(int index) {
     setState(() {
       _tasks.removeAt(index);
     });
+    _saveTasks();
   }
 
   void _toggleTaskCompletion(int index) {
     setState(() {
       _tasks[index].isCompleted = !_tasks[index].isCompleted;
     });
+    _saveTasks();
   }
 
   void _showAddTaskDialog() {
