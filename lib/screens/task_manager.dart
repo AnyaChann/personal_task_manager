@@ -94,24 +94,15 @@ class _TaskManagerState extends State<TaskManager> {
     return filteredTasks;
   }
 
-  Color _getTaskColor(Task task) {
-    final now = DateTime.now();
-    final difference = task.deadline.difference(now).inHours;
-
-    if (task.isCompleted) {
-      return Colors.green; // Công việc đã hoàn thành
-    } else if (difference <= 24) {
-      return Colors.red; // Công việc sắp hết hạn (trong vòng 24 giờ)
-    } else if (difference <= 72) {
-      return Colors.orange; // Công việc sắp đến hạn (trong vòng 3 ngày)
-    } else {
-      return Colors.blue; // Công việc còn nhiều thời gian
-    }
+  int _getCompletedTaskCount() {
+    return _tasks.where((task) => task.isCompleted).length;
   }
 
   @override
   Widget build(BuildContext context) {
     final filteredTasks = _getFilteredTasks();
+    final totalTasks = _tasks.length;
+    final completedTasks = _getCompletedTaskCount();
 
     return Scaffold(
       appBar: AppBar(
@@ -134,59 +125,84 @@ class _TaskManagerState extends State<TaskManager> {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: filteredTasks.length,
-        itemBuilder: (context, index) {
-          final task = filteredTasks[index];
-          return Container(
-            color: _getTaskColor(task).withOpacity(0.1), // Màu nền nhạt
-            child: ListTile(
-              title: Text(
-                task.title,
-                style: TextStyle(
-                  decoration: task.isCompleted
-                      ? TextDecoration.lineThrough
-                      : TextDecoration.none,
+      body: Column(
+        children: [
+          // Thống kê tổng số công việc và số đã hoàn thành
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total Tasks: $totalTasks',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-              ),
-              subtitle: Text(
-                'Deadline: ${task.deadline}',
-                style: TextStyle(
-                  color: _getTaskColor(task), // Màu chữ theo trạng thái
+                Text(
+                  'Completed: $completedTasks',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      task.isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
-                    ),
-                    onPressed: () => _toggleTaskCompletion(index),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AddTaskDialog(
-                            task: task,
-                            onAddTask: (updatedTask) => _editTask(index, updatedTask),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _deleteTask(index),
-                  ),
-                ],
-              ),
+              ],
             ),
-          );
-        },
+          ),
+          const Divider(),
+          // Danh sách công việc
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredTasks.length,
+              itemBuilder: (context, index) {
+                final task = filteredTasks[index];
+                return Container(
+                  color: _getTaskColor(task).withOpacity(0.1), // Màu nền nhạt
+                  child: ListTile(
+                    title: Text(
+                      task.title,
+                      style: TextStyle(
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Deadline: ${task.deadline}',
+                      style: TextStyle(
+                        color: _getTaskColor(task), // Màu chữ theo trạng thái
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            task.isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
+                          ),
+                          onPressed: () => _toggleTaskCompletion(index),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AddTaskDialog(
+                                  task: task,
+                                  onAddTask: (updatedTask) => _editTask(index, updatedTask),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _deleteTask(index),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddTaskDialog,
@@ -194,5 +210,20 @@ class _TaskManagerState extends State<TaskManager> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Color _getTaskColor(Task task) {
+    final now = DateTime.now();
+    final difference = task.deadline.difference(now).inHours;
+
+    if (task.isCompleted) {
+      return Colors.green; // Công việc đã hoàn thành
+    } else if (difference <= 24) {
+      return Colors.red; // Công việc sắp hết hạn (trong vòng 24 giờ)
+    } else if (difference <= 72) {
+      return Colors.orange; // Công việc sắp đến hạn (trong vòng 3 ngày)
+    } else {
+      return Colors.blue; // Công việc còn nhiều thời gian
+    }
   }
 }
