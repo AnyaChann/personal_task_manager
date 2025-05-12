@@ -13,6 +13,7 @@ class TaskManager extends StatefulWidget {
 
 class _TaskManagerState extends State<TaskManager> {
   final List<Task> _tasks = [];
+  String _filter = 'All'; // Bộ lọc: 'All', 'Completed', 'Incomplete'
 
   @override
   void initState() {
@@ -77,16 +78,44 @@ class _TaskManagerState extends State<TaskManager> {
     );
   }
 
+  List<Task> _getFilteredTasks() {
+    if (_filter == 'Completed') {
+      return _tasks.where((task) => task.isCompleted).toList();
+    } else if (_filter == 'Incomplete') {
+      return _tasks.where((task) => !task.isCompleted).toList();
+    }
+    return _tasks; // 'All'
+  }
+
   @override
   Widget build(BuildContext context) {
+    final filteredTasks = _getFilteredTasks();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Personal Task Manager'),
+        actions: [
+          DropdownButton<String>(
+            value: _filter,
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _filter = value;
+                });
+              }
+            },
+            items: const [
+              DropdownMenuItem(value: 'All', child: Text('All')),
+              DropdownMenuItem(value: 'Completed', child: Text('Completed')),
+              DropdownMenuItem(value: 'Incomplete', child: Text('Incomplete')),
+            ],
+          ),
+        ],
       ),
       body: ListView.builder(
-        itemCount: _tasks.length,
+        itemCount: filteredTasks.length,
         itemBuilder: (context, index) {
-          final task = _tasks[index];
+          final task = filteredTasks[index];
           return ListTile(
             title: Text(
               task.title,
