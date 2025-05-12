@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Thêm thư viện để định dạng ngày
 import '../models/task.dart';
 
 class AddTaskDialog extends StatefulWidget {
@@ -72,7 +73,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
               child: Text(
                 _selectedDeadline == null
                     ? 'Pick a Deadline'
-                    : 'Deadline: ${_selectedDeadline!.toLocal()}'.split(' ')[0],
+                    : 'Deadline: ${DateFormat('yyyy-MM-dd').format(_selectedDeadline!)}',
               ),
             ),
           ],
