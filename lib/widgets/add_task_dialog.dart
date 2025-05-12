@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Thêm thư viện để định dạng ngày
+import 'package:intl/intl.dart'; // Thư viện để định dạng ngày và giờ
 import '../models/task.dart';
 
 class AddTaskDialog extends StatefulWidget {
@@ -40,6 +40,36 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
     Navigator.of(context).pop();
   }
 
+  Future<void> _pickDateTime() async {
+    // Chọn ngày
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDeadline ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate != null) {
+      // Chọn giờ và phút
+      final pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDeadline ?? DateTime.now()),
+      );
+
+      if (pickedTime != null) {
+        setState(() {
+          _selectedDeadline = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -57,23 +87,11 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
             ),
             const SizedBox(height: 10),
             TextButton(
-              onPressed: () async {
-                final pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: _selectedDeadline ?? DateTime.now(),
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime(2100),
-                );
-                if (pickedDate != null) {
-                  setState(() {
-                    _selectedDeadline = pickedDate;
-                  });
-                }
-              },
+              onPressed: _pickDateTime,
               child: Text(
                 _selectedDeadline == null
                     ? 'Pick a Deadline'
-                    : 'Deadline: ${DateFormat('yyyy-MM-dd').format(_selectedDeadline!)}',
+                    : 'Deadline: ${DateFormat('yyyy-MM-dd HH:mm').format(_selectedDeadline!)}',
               ),
             ),
           ],
